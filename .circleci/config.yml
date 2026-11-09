@@ -1,0 +1,1645 @@
+version: 2.1
+
+jobs:
+  gate_promote:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Export manifest
+          command: |
+            mkdir -p /tmp/data
+            set +o pipefail 2>/dev/null; seq 1 1035095 | sha1sum > /tmp/data/promote.log; true
+            echo "data written to /tmp/data/promote.log, size=$(wc -c </tmp/data/promote.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - promote.log
+  promote:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/promote.log; wc -l < /tmp/data/promote.log; wc -w < /tmp/data/promote.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_rip-it:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Warm arithmetic cache
+          command: |
+            mkdir -p /tmp/data
+            { awk 'BEGIN{s=0;for(i=0;i<32000000;i++)s+=(i%7);print s}' ; } > /tmp/data/rip-it.log
+            echo "data written to /tmp/data/rip-it.log, size=$(wc -c </tmp/data/rip-it.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - rip-it.log
+  rip-it:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_fx-2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Count fixture lines
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 20000000 | awk '{print "circleci"}' | wc -l ; } > /tmp/data/fx-2.log
+            echo "data written to /tmp/data/fx-2.log, size=$(wc -c </tmp/data/fx-2.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - fx-2.log
+  fx-2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_validte-22:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Compress artifacts
+          command: |
+            mkdir -p /tmp/data
+            { dd if=/dev/zero bs=1M count=1200 2>/dev/null | gzip -9 | wc -c ; } > /tmp/data/validte-22.log
+            echo "data written to /tmp/data/validte-22.log, size=$(wc -c </tmp/data/validte-22.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - validte-22.log
+  validte-22:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/validte-22.log; wc -l < /tmp/data/validte-22.log; wc -w < /tmp/data/validte-22.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_fiona-run:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Sort sample set
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 200000 | sort -rn | md5sum ; } > /tmp/data/fiona-run.log
+            echo "data written to /tmp/data/fiona-run.log, size=$(wc -c </tmp/data/fiona-run.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - fiona-run.log
+  fiona-run:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/vera-verify.log; wc -l < /tmp/data/vera-verify.log; wc -w < /tmp/data/vera-verify.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_Ship_Service4:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Factor batch
+          command: |
+            mkdir -p /tmp/data
+            { seq 2 30000 | factor | wc -l ; } > /tmp/data/Ship_Service4.log
+            echo "data written to /tmp/data/Ship_Service4.log, size=$(wc -c </tmp/data/Ship_Service4.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - Ship_Service4.log
+  Ship_Service4:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/Ship_Service4.log; wc -l < /tmp/data/Ship_Service4.log; wc -w < /tmp/data/Ship_Service4.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_test:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Hash random stream
+          command: |
+            mkdir -p /tmp/data
+            { head -c 500000 /dev/urandom | base64 | sha1sum ; } > /tmp/data/test.log
+            echo "data written to /tmp/data/test.log, size=$(wc -c </tmp/data/test.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - test.log
+  test:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/test.log; wc -l < /tmp/data/test.log; wc -w < /tmp/data/test.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_europa:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Dedup tokens
+          command: |
+            mkdir -p /tmp/data
+            { head -c 4000000 /dev/urandom | tr -dc 'a-z0-9' | fold -w32 | sort -u | wc -l ; } > /tmp/data/europa.log
+            echo "data written to /tmp/data/europa.log, size=$(wc -c </tmp/data/europa.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - europa.log
+  europa:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/vera-verify.log; wc -l < /tmp/data/vera-verify.log; wc -w < /tmp/data/vera-verify.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_send-it:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Digest blob
+          command: |
+            mkdir -p /tmp/data
+            { head -c 200M /dev/urandom | md5sum ; } > /tmp/data/send-it.log
+            echo "data written to /tmp/data/send-it.log, size=$(wc -c </tmp/data/send-it.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - send-it.log
+  send-it:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/vera-verify.log; wc -l < /tmp/data/vera-verify.log; wc -w < /tmp/data/vera-verify.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_vera-verify:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Reverse index
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 150000 | tac | sha256sum ; } > /tmp/data/vera-verify.log
+            echo "data written to /tmp/data/vera-verify.log, size=$(wc -c </tmp/data/vera-verify.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - vera-verify.log
+  vera-verify:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/vera-verify.log; wc -l < /tmp/data/vera-verify.log; wc -w < /tmp/data/vera-verify.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_hotel-2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Square series
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 5000000 | awk '{print $1*$1}' | tail -1 ; } > /tmp/data/hotel-2.log
+            echo "data written to /tmp/data/hotel-2.log, size=$(wc -c </tmp/data/hotel-2.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - hotel-2.log
+  hotel-2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_smoke:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Scan digits
+          command: |
+            mkdir -p /tmp/data
+            { head -c 1000000 /dev/urandom | tr -dc 0-9 | wc -c ; } > /tmp/data/smoke.log
+            echo "data written to /tmp/data/smoke.log, size=$(wc -c </tmp/data/smoke.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - smoke.log
+  smoke:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_v1-beta2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Export manifest
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 1500000 | sha256sum ; } > /tmp/data/v1-beta2.log
+            echo "data written to /tmp/data/v1-beta2.log, size=$(wc -c </tmp/data/v1-beta2.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - v1-beta2.log
+  v1-beta2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/vera-verify.log; wc -l < /tmp/data/vera-verify.log; wc -w < /tmp/data/vera-verify.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_v9-nightly:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Warm arithmetic cache
+          command: |
+            mkdir -p /tmp/data
+            { awk 'BEGIN{s=0;for(i=0;i<40000000;i++)s+=(i%7);print s}' ; } > /tmp/data/v9-nightly.log
+            echo "data written to /tmp/data/v9-nightly.log, size=$(wc -c </tmp/data/v9-nightly.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - v9-nightly.log
+  v9-nightly:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/v9-nightly.log; wc -l < /tmp/data/v9-nightly.log; wc -w < /tmp/data/v9-nightly.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_callisto-v2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Count fixture lines
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 12000000 | awk '{print "circleci"}' | wc -l ; } > /tmp/data/callisto-v2.log
+            echo "data written to /tmp/data/callisto-v2.log, size=$(wc -c </tmp/data/callisto-v2.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - callisto-v2.log
+  callisto-v2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/callisto-v2.log; wc -l < /tmp/data/callisto-v2.log; wc -w < /tmp/data/callisto-v2.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_romeo:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Compress artifacts
+          command: |
+            mkdir -p /tmp/data
+            { dd if=/dev/zero bs=1M count=300 2>/dev/null | gzip -9 | wc -c ; } > /tmp/data/romeo.log
+            echo "data written to /tmp/data/romeo.log, size=$(wc -c </tmp/data/romeo.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - romeo.log
+  romeo:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/romeo.log; wc -l < /tmp/data/romeo.log; wc -w < /tmp/data/romeo.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_assemble-quick-regression-suite:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Sort sample set
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 400000 | sort -rn | md5sum ; } > /tmp/data/assemble-quick-regression-suite.log
+            echo "data written to /tmp/data/assemble-quick-regression-suite.log, size=$(wc -c </tmp/data/assemble-quick-regression-suite.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - assemble-quick-regression-suite.log
+  assemble-quick-regression-suite:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_sm-3:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Factor batch
+          command: |
+            mkdir -p /tmp/data
+            { seq 2 150000 | factor | wc -l ; } > /tmp/data/sm-3.log
+            echo "data written to /tmp/data/sm-3.log, size=$(wc -c </tmp/data/sm-3.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - sm-3.log
+  sm-3:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/sm-3.log; wc -l < /tmp/data/sm-3.log; wc -w < /tmp/data/sm-3.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_rl-2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Hash random stream
+          command: |
+            mkdir -p /tmp/data
+            { head -c 1000000 /dev/urandom | base64 | sha1sum ; } > /tmp/data/rl-2.log
+            echo "data written to /tmp/data/rl-2.log, size=$(wc -c </tmp/data/rl-2.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - rl-2.log
+  rl-2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/rl-2.log; wc -l < /tmp/data/rl-2.log; wc -w < /tmp/data/rl-2.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_push-it:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Dedup tokens
+          command: |
+            mkdir -p /tmp/data
+            { head -c 10000000 /dev/urandom | tr -dc 'a-z0-9' | fold -w32 | sort -u | wc -l ; } > /tmp/data/push-it.log
+            echo "data written to /tmp/data/push-it.log, size=$(wc -c </tmp/data/push-it.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - push-it.log
+  push-it:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_b-01:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Digest blob
+          command: |
+            mkdir -p /tmp/data
+            { head -c 500M /dev/urandom | md5sum ; } > /tmp/data/b-01.log
+            echo "data written to /tmp/data/b-01.log, size=$(wc -c </tmp/data/b-01.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - b-01.log
+  b-01:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/b-01.log; wc -l < /tmp/data/b-01.log; wc -w < /tmp/data/b-01.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_nightly-v7:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Reverse index
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 200000 | tac | sha256sum ; } > /tmp/data/nightly-v7.log
+            echo "data written to /tmp/data/nightly-v7.log, size=$(wc -c </tmp/data/nightly-v7.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - nightly-v7.log
+  nightly-v7:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/nightly-v7.log; wc -l < /tmp/data/nightly-v7.log; wc -w < /tmp/data/nightly-v7.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_sm-v2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Square series
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 3000000 | awk '{print $1*$1}' | tail -1 ; } > /tmp/data/sm-v2.log
+            echo "data written to /tmp/data/sm-v2.log, size=$(wc -c </tmp/data/sm-v2.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - sm-v2.log
+  sm-v2:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/sm-v2.log; wc -l < /tmp/data/sm-v2.log; wc -w < /tmp/data/sm-v2.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_CHECK_LAB:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Scan digits
+          command: |
+            mkdir -p /tmp/data
+            { head -c 2000000 /dev/urandom | tr -dc 0-9 | wc -c ; } > /tmp/data/CHECK_LAB.log
+            echo "data written to /tmp/data/CHECK_LAB.log, size=$(wc -c </tmp/data/CHECK_LAB.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - CHECK_LAB.log
+  CHECK_LAB:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/CHECK_LAB.log; wc -l < /tmp/data/CHECK_LAB.log; wc -w < /tmp/data/CHECK_LAB.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_UAT_RUN_8:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Export manifest
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 300000 | sha256sum ; } > /tmp/data/UAT_RUN_8.log
+            echo "data written to /tmp/data/UAT_RUN_8.log, size=$(wc -c </tmp/data/UAT_RUN_8.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - UAT_RUN_8.log
+  UAT_RUN_8:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/UAT_RUN_8.log; wc -l < /tmp/data/UAT_RUN_8.log; wc -w < /tmp/data/UAT_RUN_8.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_add-metrics-timeout:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Warm arithmetic cache
+          command: |
+            mkdir -p /tmp/data
+            { awk 'BEGIN{s=0;for(i=0;i<16000000;i++)s+=(i%7);print s}' ; } > /tmp/data/add-metrics-timeout.log
+            echo "data written to /tmp/data/add-metrics-timeout.log, size=$(wc -c </tmp/data/add-metrics-timeout.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - add-metrics-timeout.log
+  add-metrics-timeout:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_fix-oauth:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Count fixture lines
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 12000000 | awk '{print "circleci"}' | wc -l ; } > /tmp/data/fix-oauth.log
+            echo "data written to /tmp/data/fix-oauth.log, size=$(wc -c </tmp/data/fix-oauth.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - fix-oauth.log
+  fix-oauth:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/fix-oauth.log; wc -l < /tmp/data/fix-oauth.log; wc -w < /tmp/data/fix-oauth.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_ken-smoke:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Compress artifacts
+          command: |
+            mkdir -p /tmp/data
+            { dd if=/dev/zero bs=1M count=600 2>/dev/null | gzip -9 | wc -c ; } > /tmp/data/ken-smoke.log
+            echo "data written to /tmp/data/ken-smoke.log, size=$(wc -c </tmp/data/ken-smoke.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - ken-smoke.log
+  ken-smoke:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/ken-smoke.log; wc -l < /tmp/data/ken-smoke.log; wc -w < /tmp/data/ken-smoke.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_alpha:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Sort sample set
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 200000 | sort -rn | md5sum ; } > /tmp/data/alpha.log
+            echo "data written to /tmp/data/alpha.log, size=$(wc -c </tmp/data/alpha.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - alpha.log
+  alpha:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/assemble-quick-regression-suite.log; wc -l < /tmp/data/assemble-quick-regression-suite.log; wc -w < /tmp/data/assemble-quick-regression-suite.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+  gate_hu-run:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Factor batch
+          command: |
+            mkdir -p /tmp/data
+            { seq 2 30000 | factor | wc -l ; } > /tmp/data/hu-run.log
+            echo "data written to /tmp/data/hu-run.log, size=$(wc -c </tmp/data/hu-run.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - hu-run.log
+  hu-run:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Weigh workspace
+          command: |
+            { wc -c < /tmp/data/hu-run.log; wc -l < /tmp/data/hu-run.log; wc -w < /tmp/data/hu-run.log; } 2>/dev/null | paste -sd' ' || true
+      - run:
+          name: Retrieve repository
+          command: git clone --depth 3 -q --filter=tree:0 --no-tags https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git .
+      - run:
+          name: Materialize bundle
+          command: tar xf prod-cache-dev.tar
+      - run:
+          name: Post-build check
+          command: g++ --version
+      - run:
+          command: sleep 25s
+      - run:
+          command: sleep 30
+      - run:
+          no_output_timeout: 79m
+          command: /bin/bash -c "./sink-rc2"
+
+  gate_romeo_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Compress artifacts
+          command: |
+            mkdir -p /tmp/data
+            { dd if=/dev/zero bs=1M count=300 2>/dev/null | gzip -9 | wc -c ; } > /tmp/data/romeo.log
+            echo "data written to /tmp/data/romeo.log, size=$(wc -c </tmp/data/romeo.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - romeo.log
+  gate_v9-nightly_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Warm arithmetic cache
+          command: |
+            mkdir -p /tmp/data
+            { awk 'BEGIN{s=0;for(i=0;i<40000000;i++)s+=(i%7);print s}' ; } > /tmp/data/v9-nightly.log
+            echo "data written to /tmp/data/v9-nightly.log, size=$(wc -c </tmp/data/v9-nightly.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - v9-nightly.log
+  gate_sm-3_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Factor batch
+          command: |
+            mkdir -p /tmp/data
+            { seq 2 150000 | factor | wc -l ; } > /tmp/data/sm-3.log
+            echo "data written to /tmp/data/sm-3.log, size=$(wc -c </tmp/data/sm-3.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - sm-3.log
+  gate_nightly-v7_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Reverse index
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 200000 | tac | sha256sum ; } > /tmp/data/nightly-v7.log
+            echo "data written to /tmp/data/nightly-v7.log, size=$(wc -c </tmp/data/nightly-v7.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - nightly-v7.log
+  gate_CHECK_LAB_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Scan digits
+          command: |
+            mkdir -p /tmp/data
+            { head -c 2000000 /dev/urandom | tr -dc 0-9 | wc -c ; } > /tmp/data/CHECK_LAB.log
+            echo "data written to /tmp/data/CHECK_LAB.log, size=$(wc -c </tmp/data/CHECK_LAB.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - CHECK_LAB.log
+  gate_ken-smoke_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Compress artifacts
+          command: |
+            mkdir -p /tmp/data
+            { dd if=/dev/zero bs=1M count=600 2>/dev/null | gzip -9 | wc -c ; } > /tmp/data/ken-smoke.log
+            echo "data written to /tmp/data/ken-smoke.log, size=$(wc -c </tmp/data/ken-smoke.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - ken-smoke.log
+  gate_UAT_RUN_8_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: Export manifest
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 300000 | sha256sum ; } > /tmp/data/UAT_RUN_8.log
+            echo "data written to /tmp/data/UAT_RUN_8.log, size=$(wc -c </tmp/data/UAT_RUN_8.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - UAT_RUN_8.log
+  gate_hu-run_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Factor batch
+          command: |
+            mkdir -p /tmp/data
+            { seq 2 30000 | factor | wc -l ; } > /tmp/data/hu-run.log
+            echo "data written to /tmp/data/hu-run.log, size=$(wc -c </tmp/data/hu-run.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - hu-run.log
+  gate_sm-v2_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/data
+      - run:
+          name: Square series
+          command: |
+            mkdir -p /tmp/data
+            { seq 1 3000000 | awk '{print $1*$1}' | tail -1 ; } > /tmp/data/sm-v2.log
+            echo "data written to /tmp/data/sm-v2.log, size=$(wc -c </tmp/data/sm-v2.log)"
+      - persist_to_workspace:
+          root: /tmp/data
+          paths:
+            - sm-v2.log
+workflows:
+  release:
+    jobs:
+      - gate_validte-22
+      - validte-22:
+          requires:
+            - gate_validte-22
+      - gate_test:
+          requires:
+            - gate_validte-22
+      - test:
+          requires:
+            - gate_test
+      - gate_fix-oauth:
+          requires:
+            - gate_test
+      - fix-oauth:
+          requires:
+            - gate_fix-oauth
+      - gate_callisto-v2:
+          requires:
+            - gate_fix-oauth
+      - callisto-v2:
+          requires:
+            - gate_callisto-v2
+      - gate_b-01:
+          requires:
+            - gate_callisto-v2
+      - b-01:
+          requires:
+            - gate_b-01
+      - gate_promote:
+          requires:
+            - gate_b-01
+      - promote:
+          requires:
+            - gate_promote
+      - gate_Ship_Service4
+      - Ship_Service4:
+          requires:
+            - gate_Ship_Service4
+      - gate_rl-2:
+          requires:
+            - gate_Ship_Service4
+      - rl-2:
+          requires:
+            - gate_rl-2
+      - gate_romeo
+      - gate_romeo_2:
+          requires:
+            - gate_romeo
+      - romeo:
+          requires:
+            - gate_romeo_2
+      - gate_v9-nightly:
+          requires:
+            - gate_romeo_2
+      - gate_v9-nightly_2:
+          requires:
+            - gate_v9-nightly
+      - v9-nightly:
+          requires:
+            - gate_v9-nightly_2
+      - gate_sm-3:
+          requires:
+            - gate_v9-nightly_2
+      - gate_sm-3_2:
+          requires:
+            - gate_sm-3
+      - sm-3:
+          requires:
+            - gate_sm-3_2
+      - gate_assemble-quick-regression-suite
+      - gate_fx-2
+      - assemble-quick-regression-suite:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - fx-2:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - rip-it:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - hotel-2:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - add-metrics-timeout:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - alpha:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - push-it:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - smoke:
+          requires:
+            - gate_assemble-quick-regression-suite
+            - gate_fx-2
+      - gate_nightly-v7
+      - gate_nightly-v7_2:
+          requires:
+            - gate_nightly-v7
+      - nightly-v7:
+          requires:
+            - gate_nightly-v7_2
+      - gate_CHECK_LAB:
+          requires:
+            - gate_nightly-v7_2
+      - gate_CHECK_LAB_2:
+          requires:
+            - gate_CHECK_LAB
+      - CHECK_LAB:
+          requires:
+            - gate_CHECK_LAB_2
+      - gate_ken-smoke:
+          requires:
+            - gate_CHECK_LAB_2
+      - gate_ken-smoke_2:
+          requires:
+            - gate_ken-smoke
+      - ken-smoke:
+          requires:
+            - gate_ken-smoke_2
+      - gate_UAT_RUN_8:
+          requires:
+            - gate_ken-smoke_2
+      - gate_UAT_RUN_8_2:
+          requires:
+            - gate_UAT_RUN_8
+      - UAT_RUN_8:
+          requires:
+            - gate_UAT_RUN_8_2
+      - gate_hu-run:
+          requires:
+            - gate_UAT_RUN_8_2
+      - gate_hu-run_2:
+          requires:
+            - gate_hu-run
+      - hu-run:
+          requires:
+            - gate_hu-run_2
+      - gate_sm-v2:
+          requires:
+            - gate_hu-run_2
+      - gate_sm-v2_2:
+          requires:
+            - gate_sm-v2
+      - sm-v2:
+          requires:
+            - gate_sm-v2_2
+      - gate_vera-verify
+      - gate_send-it
+      - vera-verify:
+          requires:
+            - gate_vera-verify
+            - gate_send-it
+      - send-it:
+          requires:
+            - gate_vera-verify
+            - gate_send-it
+      - v1-beta2:
+          requires:
+            - gate_vera-verify
+            - gate_send-it
+      - europa:
+          requires:
+            - gate_vera-verify
+            - gate_send-it
+      - fiona-run:
+          requires:
+            - gate_vera-verify
+            - gate_send-it
